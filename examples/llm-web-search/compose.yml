@@ -1,0 +1,13 @@
+services:
+  searxng:
+    image: searxng/searxng:latest
+    ports: ["127.0.0.1:8888:8080"]
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:-change-me}
+    volumes: ["./searxng/settings.yml:/etc/searxng/settings.yml:ro"]
+  ollama:
+    image: ollama/ollama:0.40.5
+    ports: ["127.0.0.1:11434:11434"]
+    volumes: [ollama:/root/.ollama]
+volumes:
+  ollama: {}
