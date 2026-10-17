@@ -100,6 +100,14 @@ ruff check . && mypy otp_auth tests
 
 CI additionally runs the full HTTP flow against a real Redis in Docker.
 
+## Container image
+
+Multi-arch (amd64/arm64) images are published to GitHub Container Registry on every release:
+
+```bash
+docker pull ghcr.io/hoffman-alternative/telegram-otp-auth:latest
+```
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
