@@ -6,7 +6,7 @@ from enum import StrEnum
 
 from redis.asyncio import Redis
 
-from otp_auth.codes import codes_match, digest_code, generate_code, new_token
+from otp_auth.codes import codes_match, digest_code, generate_code, new_token, token_digest
 from otp_auth.config import Settings
 
 log = logging.getLogger("otp_auth")
@@ -69,7 +69,8 @@ class OTPService:
 
     @staticmethod
     def _session(token: str) -> str:
-        return f"otp:sess:{token}"
+        # only the digest is stored; the raw token lives in the user's cookie
+        return f"otp:sess:{token_digest(token)}"
 
     async def _incr(self, key: str, window: int) -> tuple[int, int]:
         """Fixed-window counter: returns (count, seconds_until_reset)."""

@@ -22,3 +22,9 @@ def codes_match(expected_digest: str, secret: bytes, challenge_id: str, code: st
 
 def new_token(nbytes: int = 32) -> str:
     return secrets.token_urlsafe(nbytes)
+
+
+def token_digest(token: str) -> str:
+    """SHA-256 of a session token, used as its storage key. The token carries 256 random
+    bits, so a fast unkeyed hash is enough: a Redis dump no longer contains usable sessions."""
+    return hashlib.sha256(token.encode()).hexdigest()
