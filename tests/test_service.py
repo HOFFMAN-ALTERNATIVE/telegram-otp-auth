@@ -2,6 +2,7 @@ import asyncio
 
 from fakeredis import FakeAsyncRedis
 
+from otp_auth.codes import token_digest
 from otp_auth.service import Challenge, OTPService, Outcome
 from tests.conftest import make_settings
 
@@ -164,3 +165,17 @@ async def test_logout(svc: OTPService) -> None:
     assert token
     await svc.logout(token)
     assert await svc.session_user(token) is None
+
+
+async def test_session_token_is_stored_only_as_digest(svc: OTPService, redis: FakeAsyncRedis) -> None:
+    cid = await started(svc)
+    _, code, _ = await svc.issue_code(cid, USER)
+    assert code
+    token = (await svc.verify(cid, code, IP)).session
+    assert token
+    keys = [k.decode() if isinstance(k, bytes) else k async for k in redis.scan_iter("otp:sess:*")]
+    assert keys == [f"otp:sess:{token_digest(token)}"]
+    assert all(token not in k for k in keys)
+    # a leaked key from a Redis dump is not a usable cookie
+    assert await svc.session_user(token_digest(token)) is None
+    assert await svc.session_user(token) == USER

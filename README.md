@@ -7,7 +7,7 @@
 ![mypy](https://img.shields.io/badge/mypy-strict-2A6DB2)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-Passwordless website login with one-time codes delivered by your own Telegram bot. A small FastAPI module and an aiogram 3 bot, with a written [threat model](docs/threat-model.md) and tests for each property in the table below: 30 tests, 89 % coverage (gate 85 %), `mypy --strict`, plus a full login flow against a real Redis in CI.
+Passwordless website login with one-time codes delivered by your own Telegram bot. A small FastAPI module and an aiogram 3 bot, with a written [threat model](docs/threat-model.md) and tests for each property in the table below: 31 tests, 89 % coverage (gate 85 %), `mypy --strict`, plus a full login flow against a real Redis in CI.
 
 ## Why
 
@@ -28,7 +28,7 @@ The trade-off: login depends on Telegram being reachable and on the user having 
 | Rate limits | per IP (start, verify) and per Telegram user (codes/hour), resend cap per challenge |
 | Constant-time compare | `hmac.compare_digest` |
 | Challenge binding | first Telegram account to claim a challenge owns it, so links can't be hijacked |
-| Session | random 256-bit token, HttpOnly + Secure + SameSite=Strict cookie, server-side revocation |
+| Session | random 256-bit token (only its SHA-256 is stored), HttpOnly + Secure + SameSite=Strict cookie, server-side revocation |
 | Web hardening | strict CSP (no inline JS), `no-store`, `nosniff`, `frame-ancestors 'none'`, XFF trusted only for configured hops |
 | Privacy-friendly logs | events only (`login.success`, `account.locked`…), never codes, tokens or IPs |
 
@@ -93,7 +93,7 @@ result = await svc.verify(challenge.id, user_input, client_ip)            # in y
 
 ```bash
 python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
-pytest              # 30 tests, fakeredis with Lua, coverage gate 85%
+pytest              # 31 tests, fakeredis with Lua, coverage gate 85%
 ruff check . && mypy otp_auth tests
 ```
 

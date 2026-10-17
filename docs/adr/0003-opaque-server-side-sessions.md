@@ -23,6 +23,8 @@ goes to a Redis that is already there.
 - Logout and server-side expiry work immediately. Default TTL is 7 days.
 - `SameSite=Strict` plus JSON bodies cover CSRF on verify and logout.
 - Every authenticated request costs one Redis read.
-- The token is stored as the Redis key in plain form, so a Redis dump exposes live
-  sessions. Storing a hash of the token instead is a cheap hardening step for later.
+- Redis keys hold the SHA-256 of the token, not the token, so a Redis dump does not
+  contain usable sessions. (Resolved 2026-10-17. The first version of this ADR stored
+  the raw token and listed hashing as an open step. Sessions created before the change
+  stop resolving and users log in again once.)
 - No "log out everywhere" yet. That needs a per-user index of sessions.

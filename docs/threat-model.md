@@ -27,7 +27,7 @@ sequenceDiagram
   W->>W: constant-time compare HMAC digests
   alt match
     W->>R: atomic compare-and-delete (Lua) → single use
-    W->>R: session token (random 256-bit) TTL 7 d
+    W->>R: SHA-256(session token) → user, token random 256-bit, TTL 7 d
     W-->>B: Set-Cookie: session (HttpOnly, Secure, SameSite=Strict)
   else wrong
     W->>R: attempts++ (challenge) · fails++ (account window)
