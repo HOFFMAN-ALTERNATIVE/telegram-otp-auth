@@ -19,6 +19,15 @@ jobs:
         working-directory: examples/llm-web-search
         run: pytest -q
 
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
+      - run: python -m pip install --upgrade pip && pip install . pip-audit
+      - run: pip-audit --skip-editable
+
   integration:
     runs-on: ubuntu-latest
     steps:

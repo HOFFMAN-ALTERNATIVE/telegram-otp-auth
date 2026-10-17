@@ -7,14 +7,13 @@
 ![mypy](https://img.shields.io/badge/mypy-strict-2A6DB2)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-**Passwordless website login with one-time codes delivered by your Telegram bot.**
-A small FastAPI module + aiogram 3 bot, built security-first and documented with a full [threat model](docs/threat-model.md).
+Passwordless website login with one-time codes delivered by your own Telegram bot. A small FastAPI module and an aiogram 3 bot, with a written [threat model](docs/threat-model.md) and tests for each property in the table below: 30 tests, 89 % coverage (gate 85 %), `mypy --strict`, plus a full login flow against a real Redis in CI.
 
 ## Why
 
-Telegram is already on your users' phones and is a great second channel — but home-made OTP flows are
-routinely broken: codes stored in plain text, no attempt limits, reusable codes, race conditions, spoofable IP limits.
-This project is a reference implementation that gets those details right and **proves it with tests**.
+Telegram is already on your users' phones and works well as a second channel. Home-made OTP flows are routinely broken in the same ways: codes stored in plain text, no attempt limits, reusable codes, race conditions, IP limits that trust a spoofable header. This is a reference implementation that gets those details right.
+
+The trade-off: login depends on Telegram being reachable and on the user having an account there. It is a good second channel and a poor only channel for audiences without Telegram.
 
 ## Security properties
 
@@ -23,12 +22,12 @@ This project is a reference implementation that gets those details right and **p
 | Codes never stored | only `HMAC-SHA256(secret, challenge_id:code)` is kept in Redis |
 | CSPRNG codes | `secrets.randbelow`, no modulo bias, configurable length (6–10) |
 | Short-lived | challenge TTL 5 min, delivered code TTL 2 min |
-| Single use | atomic compare-and-delete Lua script — concurrent verifies: exactly one wins |
+| Single use | atomic compare-and-delete Lua script; of concurrent verifies, exactly one wins |
 | Attempt limit | 5 wrong codes per challenge → challenge burned |
 | Brute-force lockout | 10 failures/hour per Telegram account → 15 min lock |
 | Rate limits | per IP (start, verify) and per Telegram user (codes/hour), resend cap per challenge |
 | Constant-time compare | `hmac.compare_digest` |
-| Challenge binding | first Telegram account to claim a challenge owns it — links can't be hijacked |
+| Challenge binding | first Telegram account to claim a challenge owns it, so links can't be hijacked |
 | Session | random 256-bit token, HttpOnly + Secure + SameSite=Strict cookie, server-side revocation |
 | Web hardening | strict CSP (no inline JS), `no-store`, `nosniff`, `frame-ancestors 'none'`, XFF trusted only for configured hops |
 | Privacy-friendly logs | events only (`login.success`, `account.locked`…), never codes, tokens or IPs |
@@ -88,17 +87,17 @@ result = await svc.verify(challenge.id, user_input, client_ip)            # in y
 
 ## Examples
 
-- [`examples/llm-web-search`](examples/llm-web-search) — a local Ollama model with web-search tool calling via self-hosted SearXNG.
+- [`examples/llm-web-search`](examples/llm-web-search): a local Ollama model with web-search tool calling via self-hosted SearXNG.
 
 ## Development
 
 ```bash
 python -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"
-pytest              # 28 tests, fakeredis with Lua, coverage gate 85%
+pytest              # 30 tests, fakeredis with Lua, coverage gate 85%
 ruff check . && mypy otp_auth tests
 ```
 
-CI additionally runs the full HTTP flow against a real Redis in Docker.
+CI additionally runs the full HTTP flow against a real Redis in Docker and `pip-audit` on the resolved dependencies.
 
 ## Container image
 
@@ -108,6 +107,15 @@ Multi-arch (amd64/arm64) images are published to GitHub Container Registry on ev
 docker pull ghcr.io/hoffman-alternative/telegram-otp-auth:latest
 ```
 
+## Limits
+
+- Redis is required and holds all state. If Redis is down, logins fail rather than fall back, and `/healthz` returns an error.
+- Rate limits and lockouts live in one Redis; there is no cross-region coordination.
+- The bot uses long polling. For webhook delivery you need to add the endpoint yourself.
+- Sessions are opaque cookies stored in Redis. Revocation is per session; there is no "log out everywhere" UI.
+
+Security notes and reporting: [SECURITY.md](SECURITY.md).
+
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).

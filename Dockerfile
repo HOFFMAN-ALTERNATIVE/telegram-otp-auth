@@ -13,4 +13,5 @@ RUN useradd -r -u 10001 app
 COPY --from=builder /opt/venv /opt/venv
 USER app
 EXPOSE 8000
-CMD ["uvicorn", "otp_auth.web.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+# The same image runs the bot, so the HTTP healthcheck lives in compose.yml for the web service only.
+CMD ["uvicorn", "otp_auth.web.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--timeout-graceful-shutdown", "10"]
