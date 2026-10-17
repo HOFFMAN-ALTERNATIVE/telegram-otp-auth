@@ -107,6 +107,15 @@ Multi-arch (amd64/arm64) images are published to GitHub Container Registry on ev
 docker pull ghcr.io/hoffman-alternative/telegram-otp-auth:latest
 ```
 
+## Design decisions
+
+- [ADR 0001](docs/adr/0001-hmac-digest-for-codes.md): store `HMAC(secret, challenge_id:code)`,
+  not the code and not a bcrypt hash. With a 10^6 space the secret is the protection.
+- [ADR 0002](docs/adr/0002-redis-with-atomic-consume.md): all state in Redis with TTLs, and a
+  Lua script that checks and deletes in one step, so a code is used exactly once.
+- [ADR 0003](docs/adr/0003-opaque-server-side-sessions.md): opaque session tokens in Redis
+  instead of JWTs, so logout is a real revocation.
+
 ## Limits
 
 - Redis is required and holds all state. If Redis is down, logins fail rather than fall back, and `/healthz` returns an error.
